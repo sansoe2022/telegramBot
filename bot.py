@@ -24,8 +24,9 @@ def get_data():
         pass
     return None
 
-# --- TEXT PARSING HELPER (မြန်မာဂဏန်းများ ဖတ်ရန်) ---
+# --- TEXT PARSING HELPER ---
 def parse_amount(text):
+    # ကော်မာ၊ Space များကို ဖယ်ရှားခြင်း
     text = text.replace(',', '').replace(' ', '')
     multiplier = 1
     
@@ -48,8 +49,13 @@ def parse_amount(text):
 # --- FLASK KEEP-ALIVE ---
 @app.route('/')
 def home(): return "MWD Zay Bot is Running!"
-def run_http(): app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
-def keep_alive(): t = Thread(target=run_http); t.start()
+
+def run_http():
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+
+def keep_alive():
+    t = Thread(target=run_http)
+    t.start()
 
 # --- MAIN MENU ---
 def main_menu():
@@ -112,8 +118,10 @@ def analyze_message(message):
     mm_rate = float(data.get('mmRate', 795))
     items = data.get('items', [])
 
-    # ၁. စကားလုံး Keywords စစ်ဆေးခြင်း
-    if any(x in msg for in ['wave acc', 'kpay acc', 'ငွေလွှဲ', 'wave password', 'ဆိုင်ထုတ်']):
+    # ၁. စကားလုံး Keywords စစ်ဆေးခြင်း (FIXED ERROR HERE)
+    keywords = ['wave acc', 'kpay acc', 'ငွေလွှဲ', 'wave password', 'ဆိုင်ထုတ်']
+    if any(k in msg for k in keywords):
+        
         # Wave Pass / Shop Special Rate check
         if 'password' in msg or 'ဆိုင်ထုတ်' in msg or 'pass' in msg:
              if 'ကျပ်ယူ' in msg or 'kpay' in msg or 'wave' in msg: # Buying MMK with Wave Pass
@@ -139,19 +147,17 @@ def analyze_message(message):
         return
 
     # ၂. တွက်ချက်မှု Logic (Calculation)
-    # ဂဏန်းပါမပါ စစ်ဆေးပြီး ဆွဲထုတ်မယ်
     amount = parse_amount(msg)
     
     if amount:
         # User က "ဘတ်" လို့ ပြောလာရင် (THB Input)
-        is_thb_input = any(x in msg for in ['ဘတ်', 'b', 'thb'])
+        is_thb_input = any(x in msg for x in ['ဘတ်', 'b', 'thb'])
         # User က "ရမလဲ" လို့မေးရင် (Buying THB / Selling MMK)
         wants_thb = 'ရမလဲ' in msg or 'ရလဲ' in msg
         
         result_text = ""
 
         # SCENARIO A: User Wants MMK (Kyat) / User Inputs Kyat Amount
-        # (ပုံမှန် "1သိန်း ဘတ်ဘယ်လောက်လဲ" ဆိုတာ ကျပ်လိုချင်တာ/ကျပ်ရောင်းမှာ လို့ ယူဆသည်)
         if not wants_thb and not is_thb_input:
             mmk_amount = amount
             
@@ -163,7 +169,7 @@ def analyze_message(message):
                     if float(item['mmkBill']) == mmk_amount:
                         result_text = f"📱 {mmk_amount:,.0f} ကျပ် (Ph Bill) = {item['thbBill']} ဘတ်"
                         found = True; break
-                if not found: result_text = f"⚠️ {mmk_amount:,.0f} အတွက် ဖုန်းဘေ Package မရှိပါ။"
+                if not found: result_text = f"⚠️ {mmk_amount:,.0f} အတွက် ဖုန်းဘေ Package မရှိပါ။\n(ဥပမာ 1000, 3000, 5000... ရိုက်ထည့်ပါ)"
 
             elif 30000 <= mmk_amount < 100000:
                 # ၃ သောင်း - ၁ သိန်း (Rate - 5, Fee + 10)
@@ -192,39 +198,30 @@ def analyze_message(message):
             # 260 ဘတ်အောက် (Phone Bill Reverse)
             if thb_amount <= 260:
                  # Find closest bill
-                 closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
-                 result_text = f"📱 {thb_amount} ဘတ်ဝန်းကျင်ဆိုရင်\n✅ {closest_item['mmkBill']} ကျပ် (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
+                 if items:
+                     closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
+                     result_text = f"📱 {thb_amount} ဘတ်ဝန်းကျင်ဆိုရင်\n✅ {closest_item['mmkBill']} ကျပ် (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
                  # 30k - 100k Logic Reverse: (THB - 10) / Rate * 100000
-                 # Assuming standard small amount deduction
                  calc_rate = th_rate - 5
                  mmk_get = ((thb_amount - 10) / calc_rate) * 100000
-                 # Round to nearest 500/1000 for clean look
                  mmk_clean = round(mmk_get / 100) * 100 
                  result_text = f"💰 {thb_amount} ဘတ် ဆိုရင်\n✅ {mmk_clean:,.0f} ကျပ်ဝန်းကျင် ရပါမယ်ခင်ဗျာ။"
 
         # SCENARIO C: User Wants THB (User inputs MMK and asks "ရမလဲ")
-        # (Example: "1သိန်း ဘတ်ဘယ်လောက်ရလဲ") -> mmRate logic
         elif wants_thb or (not is_thb_input and 'ရမလဲ' in msg):
             mmk_amount = amount
             
             # --- ဘတ်ယူမည့် Logic ---
             if mmk_amount < 100000:
-                # 1 သိန်းအောက် (Phone Bill Rate approximation logic for buying THB)
-                # Formula: (Amount * 0.00800) - 10 roughly
-                # Using mmRate generally but roughly
-                mm_calc_rate = mm_rate # 795 typically
-                # Adjusting logic per user request "50000 * 0.00800 = 400 - 10"
-                # 0.00800 implies rate 800. Let's use mmRate directly.
                 thb_get = ((mmk_amount / 100000) * mm_rate) - 10
                 result_text = f"🇲🇲 {mmk_amount:,.0f} ကျပ် (ဘတ်ယူ) ဆိုရင်\n✅ {thb_get:,.0f} ဘတ် ရပါမယ်။"
             else:
-                # 1 သိန်းအထက် (Tiered Pricing for Buying THB)
                 rate = mm_rate
-                if mmk_amount >= 10000000: rate += 5   # 100 Lakh
-                elif mmk_amount >= 5000000: rate += 4  # 50 Lakh
-                elif mmk_amount >= 3000000: rate += 3  # 30 Lakh
-                elif mmk_amount >= 1000000: rate += 2  # 10 Lakh
+                if mmk_amount >= 10000000: rate += 5
+                elif mmk_amount >= 5000000: rate += 4
+                elif mmk_amount >= 3000000: rate += 3
+                elif mmk_amount >= 1000000: rate += 2
                 
                 thb_get = (mmk_amount / 100000) * rate
                 result_text = f"🇲🇲 {mmk_amount:,.0f} ကျပ် (ဘတ်ယူ) ဆိုရင်\n✅ {thb_get:,.2f} ဘတ် ရပါမယ်။\n(Rate: {rate})"
