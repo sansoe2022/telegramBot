@@ -6,7 +6,7 @@ import os
 import requests
 
 # --- CONFIGURATION ---
-API_TOKEN = 'YOUR_BOT_TOKEN_HERE' # သင့် Token ထည့်ပါ
+API_TOKEN = '8392015081:AAH7kW0EtCUTQDgOLM3OEloiEJfQBjMoDec' # သင့် Token ထည့်ပါ
 # သင့် JSON Link အမှန်
 JSON_URL = 'https://raw.githubusercontent.com/sansoe2022/mwd-web/refs/heads/main/api.json'
 
