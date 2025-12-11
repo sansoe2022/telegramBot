@@ -7,7 +7,7 @@ import requests
 import re
 
 # --- CONFIGURATION ---
-API_TOKEN = '8392015081:AAH7kW0EtCUTQDgOLM3OEloiEJfQBjMoDec' # သင့် Token ထည့်ပါ
+API_TOKEN = '8392015081:AAH7kW0EtCUTQDgOLM3OEloiEJfQBjMoDec' # ⚠️ ဒီနေရာမှာ 83920... နဲ့စတဲ့ သင့် Token ကို ပြန်ထည့်ပါ
 JSON_URL = 'https://raw.githubusercontent.com/sansoe2022/mwd-web/refs/heads/main/api.json'
 ADMIN_USERNAME = "sansoe2021"
 
@@ -120,8 +120,8 @@ def analyze_message(message):
     data = get_data()
     if not data: return
 
-    th_rate = float(data.get('thRate', 815)) # Rate for User Selling THB (Buying Kyat)
-    mm_rate = float(data.get('mmRate', 795)) # Rate for User Buying THB (Selling Kyat)
+    th_rate = float(data.get('thRate', 815)) # User Selling THB
+    mm_rate = float(data.get('mmRate', 795)) # User Buying THB
     items = data.get('items', [])
 
     # Keywords Detection
@@ -147,12 +147,10 @@ def analyze_message(message):
     amount = parse_amount(msg)
     
     if amount:
-        # Check Currency Type Explicitly
+        # Check Currency Type
         is_thb_input = any(x in msg for x in ['ဘတ်', 'b', 'thb'])
         
-        # Check Intention (Pay vs Get)
-        # "ပေး" means user needs to PAY that amount (Buying)
-        # "ယူ" means user wants to TAKE/BUY that amount
+        # Check Intention
         is_buying_thb = any(x in msg for x in ['ပေး', 'ယူ', 'buy', 'need']) 
         
         result_text = ""
@@ -163,33 +161,32 @@ def analyze_message(message):
         if is_thb_input:
             thb_amount = amount
             
-            # Sub-case 1A: User WANTS Baht (Buying THB) - "500 Baht how much Kyat to PAY?"
-            # Formula: (Baht + 10) / Rate * 100000
+            # Sub-case 1A: User WANTS Baht (Buying THB)
             if is_buying_thb: 
-                # Calculation using mmRate (Buying Rate)
-                # 500+10 = 510 / (795/100000) approx
-                # User formula: 500+10 = 510 / 0.00800
                 calc_rate = mm_rate / 100000
-                mmk_cost = (thb_amount + 10) / calc_rate
-                # Rounding to nice number
+                
+                # Logic: 1 သိန်းနှင့်အထက် (သို့) Rate ထက်များရင် +10 မပေါင်းဘူး
+                if thb_amount >= mm_rate:
+                    mmk_cost = thb_amount / calc_rate
+                    fee_msg = ""
+                else:
+                    mmk_cost = (thb_amount + 10) / calc_rate
+                    fee_msg = ", Fee +10 included"
+
                 mmk_clean = round(mmk_cost / 100) * 100
                 
                 result_text = (f"🇲🇲 <b>{thb_amount:,.0f} B</b> လိုချင်ရင်\n"
                                f"✅ <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ကျသင့်ပါမယ်။\n"
-                               f"(Rate: {mm_rate}, Fee included)")
+                               f"(Rate: {mm_rate}{fee_msg})")
 
-            # Sub-case 1B: User HAS Baht (Selling THB) - "500 Baht how much Kyat GET?"
-            # Formula: (Baht - 10) / Rate * 100000
+            # Sub-case 1B: User HAS Baht (Selling THB)
             else:
                 if thb_amount <= 260:
                      if items:
                          closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                          result_text = f"📱 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n✅ <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
                 else:
-                     # Using thRate (Selling Rate)
-                     # User formula: 500-10 = 490 / 0.00810
-                     calc_rate_val = th_rate - 5 # Small amount deduction
-                     calc_rate = calc_rate_val / 100000
+                     calc_rate = (th_rate - 5) / 100000
                      mmk_get = (thb_amount - 10) / calc_rate
                      mmk_clean = round(mmk_get / 100) * 100 
                      result_text = (f"💰 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
@@ -201,28 +198,25 @@ def analyze_message(message):
         else:
             mmk_amount = amount
             
-            # Sub-case 2A: User WANTS THB (Buying THB) - "50000 Kyat how much Baht GET?"
-            # Detected by "ရမလဲ" or explicit "ဘတ်ယူ" context
+            # Sub-case 2A: User WANTS THB (Buying THB)
             wants_thb_context = 'ရမလဲ' in msg or 'ရလဲ' in msg or 'ဘတ်ယူ' in msg
 
             if wants_thb_context:
-                # Buying THB Logic
                 if mmk_amount < 100000:
                     thb_get = ((mmk_amount / 100000) * mm_rate) - 10
                     result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (ဘတ်ယူ) ဆိုရင်\n✅ <b>{thb_get:,.0f} B</b> ရပါမယ်။"
                 else:
                     rate = mm_rate
+                    # Tiered Rates for Large Amounts
                     if mmk_amount >= 10000000: rate += 5
                     elif mmk_amount >= 5000000: rate += 4
                     elif mmk_amount >= 3000000: rate += 3
                     elif mmk_amount >= 1000000: rate += 2
+                    
                     thb_get = (mmk_amount / 100000) * rate
                     result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (ဘတ်ယူ) ဆိုရင်\n✅ <b>{thb_get:,.2f} B</b> ရပါမယ်။\n(Rate: {rate})"
             
-            # Sub-case 2B: User WANTS Kyat (Selling THB implied) - "50000 Kyat how much Baht?"
-            # (Usually implies "If I give you Kyat, how much Baht is it worth?" -> Buying THB context generally)
-            # BUT user logic earlier said: "1 Lakh how much Baht?" -> Use thRate (Selling THB context??)
-            # Let's stick to the previous working logic for Kyat Input.
+            # Sub-case 2B: User WANTS Kyat (Selling THB implied)
             else:
                 if mmk_amount < 30000:
                     found = False
