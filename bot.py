@@ -7,7 +7,7 @@ import requests
 import re
 
 # --- CONFIGURATION ---
-API_TOKEN = 'YOUR_BOT_TOKEN_HERE' # သင့် Token ထည့်ပါ
+API_TOKEN = '8392015081:AAH7kW0EtCUTQDgOLM3OEloiEJfQBjMoDec' # သင့် Token ထည့်ပါ
 JSON_URL = 'https://raw.githubusercontent.com/sansoe2022/mwd-web/refs/heads/main/api.json'
 ADMIN_USERNAME = "sansoe2021"
 
