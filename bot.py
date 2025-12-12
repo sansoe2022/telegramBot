@@ -59,9 +59,15 @@ def keep_alive():
 # --- MENUS ---
 def get_reply_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    # Menu 5 ခု ဖြစ်သွားပါပြီ ("အကူအညီ" အသစ်တိုးထားသည်)
     markup.add("💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ အကူအညီ")
     return markup
+
+# --- HELPERS FOR FALLBACK ---
+def send_fallback(message):
+    text = "ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ"
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("Adminကို ဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
+    bot.reply_to(message, text, reply_markup=markup)
 
 # --- COMMAND HANDLERS ---
 @bot.message_handler(commands=['start'])
@@ -78,8 +84,8 @@ def menu_rate(message):
         th_rate = data.get('thRate', 815)
         mm_rate = data.get('mmRate', 795)
         text = (f"📅 <b>ယခုငွေဈေး</b>\n\n"
-                f"🇹🇭➡️🇲🇲 <b>ဘတ်ပေးကျပ်ယူစျေး (1 သိန်းကျပ်)</b> = {th_rate} ဘတ်\n"
-                f"🇲🇲➡️🇹🇭 <b>ကျပ်ပေးဘတ်ယူစျေး (1 သိန်းကျပ်)</b> = {mm_rate} ဘတ်\n")
+                f"🇹🇭➡️🇲🇲 <b>ဘတ်ပေးကျပ်ယူ (1 သိန်း)</b> = {th_rate} ဘတ်\n"
+                f"🇲🇲➡️🇹🇭 <b>ကျပ်ပေးဘတ်ယူ (1 သိန်း)</b> = {mm_rate} ဘတ်\n")
         bot.reply_to(message, text, parse_mode='HTML')
 
 # 2. ဖုန်းဘေဈေး
@@ -88,17 +94,16 @@ def menu_bill(message):
     data = get_data()
     if data:
         items = data.get('items', [])
-        text = "📱 <b>ဖုန်းဘေဈေးနှုန်းများ</b>\n\n"
+        text = "📱 <b>မြန်မာဖုန်းဘေဈေးနှုန်းများ</b>\n\n"
         for item in items:
             text += f"🇲🇲 {item.get('mmkBill')} Ks = 🇹🇭 {item.get('thbBill')} B\n"
         bot.reply_to(message, text, parse_mode='HTML')
 
-# 3. ငွေလွှဲမယ် (Button ပါသော VERSION အသစ်)
+# 3. ငွေလွှဲမယ်
 @bot.message_handler(func=lambda message: message.text == "💸 ငွေလွှဲမယ်")
 def menu_transfer(message):
     text = "ငွေလွှဲလိုပါက Adminကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်"
     markup = InlineKeyboardMarkup()
-    # Admin Link Button
     markup.add(InlineKeyboardButton("Admin ကိုဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
     bot.reply_to(message, text, reply_markup=markup)
 
@@ -111,183 +116,159 @@ def menu_download(message):
     markup.add(InlineKeyboardButton("📥 Click here to Download", url=link))
     bot.reply_to(message, "အောက်ပါ Button ကို နှိပ်၍ MWD Zayကို Download ရယူနိုင်ပါတယ်ခင်ဗျာ။", reply_markup=markup)
 
-# 5. အကူအညီ (MENU အသစ်)
+# 5. အကူအညီ
 @bot.message_handler(func=lambda message: message.text == "❓ အကူအညီ")
 def menu_help(message):
     text = (
         "<b>အသုံးပြုပုံ လမ်းညွှန်</b>\n\n"
-        "🇲🇲 <b>ကျပ်ငွေလိုချင်ပါက</b>\n"
-        "<code>/ကျပ်ယူ 100000</code> သို့မဟုတ် <code>/ကျပ်ယူ 500ဘတ်</code>\n"
-        "လို့ ရေးပေးပါခင်ဗျာ။\n\n"
-        "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက</b>\n"
-        "<code>/ဘတ်ယူ 100000</code> သို့မဟုတ် <code>/ဘတ်ယူ 500ဘတ်</code>\n"
-        "လို့ ရေးပေးပါခင်ဗျာ။"
+        "🇲🇲 <b>ကျပ်ငွေလိုချင်ပါက (ဘတ်ပေးမည်)</b>\n"
+        "• <code>1000 ဘတ်</code> သို့မဟုတ် <code>ဘတ်ပေး 1000B</code>\n\n"
+        "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက (ကျပ်ပေးမည်)</b>\n"
+        "• <code>1သိန်းကျပ်</code> သို့မဟုတ် <code>ကျပ်ပေး 100000</code>\n\n"
+        "လိုချင်သော ပမာဏကို တိုက်ရိုက်ရိုက်ထည့်၍လည်း တွက်ချက်နိုင်ပါသည်။"
     )
     bot.reply_to(message, text, parse_mode='HTML')
 
-# --- COMMAND BASED CALCULATION (/ကျပ်ယူ & /ဘတ်ယူ) ---
-@bot.message_handler(commands=['ကျပ်ယူ', 'ဘတ်ယူ'])
-def command_calculation(message):
-    msg = message.text
-    command = msg.split()[0] # /ကျပ်ယူ or /ဘတ်ယူ
-    
-    # Command နောက်က စာသားကို ယူမည် (ဥပမာ: "100000" or "500ဘတ်")
-    content = msg.replace(command, "").strip()
-    
-    if not content:
-        bot.reply_to(message, "ကျေးဇူးပြု၍ ပမာဏတစ်ခုခု ရေးပေးပါ\n(ဥပမာ: /ကျပ်ယူ 1သိန်း)")
-        return
 
-    # Check Intention based on command
-    is_buying_mmk = (command == "/ကျပ်ယူ") # User wants Kyat
-    is_buying_thb = (command == "/ဘတ်ယူ") # User wants Baht
-    
-    # Process Calculation
-    process_calculation(message, content, force_buy_mmk=is_buying_mmk, force_buy_thb=is_buying_thb)
-
-
-# --- GENERAL TEXT ANALYZER ---
+# --- MAIN MESSAGE ANALYZER ---
 @bot.message_handler(func=lambda message: True)
 def analyze_message(message):
     msg = message.text
+    msg_lower = msg.lower()
     
-    # Skip Menu Texts
+    # 1. Skip Menu Texts (They are handled above)
     if msg in ["💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ အကူအညီ"]:
         return
 
-    # Fallback to general calculation
-    process_calculation(message, msg)
+    # 2. Check for Amount (Calculation Trigger)
+    amount = parse_amount(msg_lower)
+    
+    # ဂဏန်းမပါရင် (သို့) တွက်ချက်လို့မရရင် Fallback ပို့မယ်
+    if not amount:
+        send_fallback(message)
+        return
 
-
-# --- CORE CALCULATION FUNCTION ---
-def process_calculation(message, text_content, force_buy_mmk=False, force_buy_thb=False):
+    # 3. Data Fetching
     data = get_data()
-    if not data: return
+    if not data: return # API Error fallback
 
     th_rate = float(data.get('thRate', 815))
     mm_rate = float(data.get('mmRate', 795))
     items = data.get('items', [])
 
-    msg_lower = text_content.lower()
-
-    # Keywords Detection
-    keywords = ['wave acc', 'kpay acc', 'ငွေလွှဲ', 'wave password', 'ဆိုင်ထုတ်']
-    if any(k in msg_lower for k in keywords):
-        if 'password' in msg_lower or 'ဆိုင်ထုတ်' in msg_lower or 'pass' in msg_lower:
-             if 'ကျပ်ယူ' in msg_lower or 'kpay' in msg_lower or 'wave' in msg_lower:
-                  special_rate = th_rate + 15
-                  bot.reply_to(message, f"💸 Wave Password/ဆိုင်ထုတ်ဖြင့် ကျပ်ယူပါက\n1 သိန်းလျှင် {special_rate} ဘတ် ကျသင့်ပါမည်။\n(Admin သို့ ဆက်သွယ်ရန်: @{ADMIN_USERNAME})")
-                  return
-             elif 'ဘတ်ယူ' in msg_lower:
-                  bot.reply_to(message, f"❌ Wave Password ဖြင့် ဘတ်ယူ၍ မရပါ။\nAdmin သို့ မေးမြန်းပါ: @{ADMIN_USERNAME}")
-                  return
-        bot.reply_to(message, f"💁‍♂️ ငွေလွှဲကိစ္စများအတွက် Admin ကို တိုက်ရိုက်ဆက်သွယ်ပေးပါခင်ဗျာ။\n@{ADMIN_USERNAME}")
-        return
-        
-    if 'ဘယ်ဈေးလဲ' in msg_lower:
-         bot.reply_to(message, f"🇹🇭 ကျပ်ယူ (1 သိန်း) = {th_rate} ဘတ်\n🇲🇲 ဘတ်ယူ (1 သိန်း) = {mm_rate} ဘတ်")
-         return
-
-    amount = parse_amount(msg_lower)
+    # 4. Determine Intent (Buying THB vs Buying MMK)
+    is_thb_input = any(x in msg_lower for x in ['ဘတ်', 'b', 'thb'])
     
-    if amount:
-        is_thb_input = any(x in msg_lower for x in ['ဘတ်', 'b', 'thb'])
+    # Intent Mapping
+    # Buying THB (Want Baht / Give Kyat) Keywords:
+    # "ကျပ်ပေး" (Give Kyat), "ဘတ်ယူ" (Take Baht), "ရမလဲ", "ဘတ်လို"
+    keywords_buy_thb = ['ကျပ်ပေး', 'ဘတ်ယူ', 'ရမလဲ', 'ရလဲ', 'ဘတ်လို', 'buy', 'need']
+    
+    # Buying MMK (Want Kyat / Give Baht) Keywords:
+    # "ဘတ်ပေး" (Give Baht), "ကျပ်ယူ" (Take Kyat)
+    keywords_buy_mmk = ['ဘတ်ပေး', 'ကျပ်ယူ']
+
+    # Logic Detection
+    user_wants_thb = any(k in msg_lower for k in keywords_buy_thb)
+    user_wants_mmk = any(k in msg_lower for k in keywords_buy_mmk)
+
+    # Contextual Fallback for Plain Numbers
+    if not user_wants_thb and not user_wants_mmk:
+        # If user types "100000" (Kyat), usually implies Buying Baht
+        if not is_thb_input: user_wants_thb = True 
+        # If user types "500 B" (Baht), usually implies Selling Baht (Buying Kyat)
+        else: user_wants_mmk = True
+
+    result_text = ""
+
+    # --- CALCULATION LOGIC ---
+
+    # SCENARIO A: INPUT IS BAHT (Example: "500 B", "ဘတ်ပေး 500", "500 b ယူမယ်")
+    if is_thb_input:
+        thb_amount = amount
         
-        # Determine Intention (If forced by command, use that. Else detect from text)
-        buying_thb = force_buy_thb or (not force_buy_mmk and any(x in msg_lower for x in ['ရမလဲ', 'ရလဲ', 'ဘတ်ယူ', 'လို']))
-        buying_mmk = force_buy_mmk or (not force_buy_thb and (is_thb_input and not buying_thb)) # Giving Baht to get Kyat
-
-        result_text = ""
-
-        # --- LOGIC START ---
-
-        # 1. INPUT IS BAHT
-        if is_thb_input:
-            thb_amount = amount
-            
-            # Buying THB with THB input? (Rare, usually means "I want 500 Baht")
-            # Logic: Input Baht -> Output Kyat Cost
-            if buying_thb: 
-                # Formula: (Baht + 10) / Rate (mmRate)
-                calc_rate = mm_rate / 100000
-                if thb_amount >= mm_rate: # 1 Lakh equivalent
-                    mmk_cost = thb_amount / calc_rate
-                    fee_msg = ""
-                else:
-                    mmk_cost = (thb_amount + 10) / calc_rate
-                    fee_msg = ", Fee +10 included"
-                
-                mmk_clean = round(mmk_cost / 100) * 100
-                result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> လိုချင်ရင်\n"
-                               f"✅ <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ကျသင့်ပါမယ်။\n"
-                               f"(Rate: {mm_rate}{fee_msg})")
-
-            # Selling THB (Input Baht -> Get Kyat)
+        # User WANTS Baht (Buying THB with THB Input - Rare: "I need 500 Baht")
+        if user_wants_thb and not user_wants_mmk:
+            calc_rate = mm_rate / 100000
+            if thb_amount >= mm_rate:
+                mmk_cost = thb_amount / calc_rate
+                fee_msg = ""
             else:
-                if thb_amount <= 260:
-                     if items:
-                         closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
-                         result_text = f"📱 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n✅ <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
-                else:
-                     calc_rate = (th_rate - 5) / 100000
-                     mmk_get = (thb_amount - 10) / calc_rate
-                     mmk_clean = round(mmk_get / 100) * 100 
-                     result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
-                                    f"✅ <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
+                mmk_cost = (thb_amount + 10) / calc_rate
+                fee_msg = ", Fee +10 included"
+            
+            mmk_clean = round(mmk_cost / 100) * 100
+            result_text = (f"🇲🇲 <b>{thb_amount:,.0f} B</b> လိုချင်ရင်\n"
+                           f"🇹🇭 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ကျသင့်ပါမယ်။\n"
+                           f"(Rate: {mm_rate}{fee_msg})")
 
-        # 2. INPUT IS KYAT
+        # User GIVES Baht (Selling THB / Buying Kyat) - Default for Baht input
         else:
-            mmk_amount = amount
-            
-            # Buying THB (Input Kyat -> Get Baht)
-            if buying_thb:
-                if mmk_amount < 100000:
-                    thb_get = ((mmk_amount / 100000) * mm_rate) - 10
-                    result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (ဘတ်ယူ) ဆိုရင်\n✅ <b>{thb_get:,.0f} B</b> ရပါမယ်။"
-                else:
-                    rate = mm_rate
-                    if mmk_amount >= 10000000: rate += 5
-                    elif mmk_amount >= 5000000: rate += 4
-                    elif mmk_amount >= 3000000: rate += 3
-                    elif mmk_amount >= 1000000: rate += 2
-                    thb_get = (mmk_amount / 100000) * rate
-                    result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (ဘတ်ယူ) ဆိုရင်\n✅ <b>{thb_get:,.2f} B</b> ရပါမယ်။\n(Rate: {rate})"
-            
-            # Selling THB (Buying Kyat / Input Kyat -> Pay Baht)
+            # Phone Bill Range Check
+            if thb_amount <= 260:
+                 if items:
+                     closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
+                     result_text = f"📱 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n✅ <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                if mmk_amount < 30000:
-                    found = False
-                    for item in items:
-                        if float(item['mmkBill']) == mmk_amount:
-                            result_text = f"📱 <b>{mmk_amount:,.0f} Ks</b> (Ph Bill) = <b>{item['thbBill']} B</b>"
-                            found = True; break
-                    if not found: result_text = f"⚠️ {mmk_amount:,.0f} အတွက် ဖုန်းဘေ Package မရှိပါ။"
+                 calc_rate = (th_rate - 5) / 100000
+                 mmk_get = (thb_amount - 10) / calc_rate
+                 mmk_clean = round(mmk_get / 100) * 100 
+                 result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
+                                f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
 
-                elif 30000 <= mmk_amount < 100000:
-                    calc_rate = th_rate - 5
-                    thb_cost = ((mmk_amount / 100000) * calc_rate) + 10
-                    result_text = f"💰 <b>{mmk_amount:,.0f} Ks</b> ယူလျှင်\n✅ <b>{thb_cost:,.0f} B</b> ကျသင့်ပါမည်။"
-
-                else:
-                    rate = th_rate
-                    if 'password' in msg_lower or 'pass' in msg_lower: rate += 15
-                    else:
-                        if mmk_amount >= 30000000: rate -= 5
-                        elif mmk_amount >= 10000000: rate -= 4
-                        elif mmk_amount >= 5000000: rate -= 3
-                        elif mmk_amount >= 3000000: rate -= 2
-                        elif mmk_amount >= 1000000: rate -= 1
-                    thb_cost = (mmk_amount / 100000) * rate
-                    result_text = f"💰 <b>{mmk_amount:,.0f} Ks</b> ယူလျှင်\n✅ <b>{thb_cost:,.2f} B</b> ကျသင့်ပါမည်။\n(Rate: {rate})"
-
-        if result_text:
-            bot.reply_to(message, result_text, parse_mode='HTML')
-        else:
-             bot.reply_to(message, f"ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ @{ADMIN_USERNAME}")
-
+    # SCENARIO B: INPUT IS KYAT (Example: "100000", "ကျပ်ပေး 100000")
     else:
-        # Fallback for non-amount text
-        bot.reply_to(message, f"ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ @{ADMIN_USERNAME}")
+        mmk_amount = amount
+        
+        # User WANTS Baht (Buying THB / Giving Kyat) - Default for Kyat input
+        if user_wants_thb or (not user_wants_mmk):
+            # Check 10 Lakhs Logic
+            rate = mm_rate
+            if mmk_amount >= 10000000: rate += 5
+            elif mmk_amount >= 5000000: rate += 4
+            elif mmk_amount >= 3000000: rate += 3
+            elif mmk_amount >= 1000000: rate += 2 # 10 Lakhs+ gets +2
+
+            if mmk_amount < 100000:
+                thb_get = ((mmk_amount / 100000) * mm_rate) - 10
+                result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (ဘတ်ယူ) ဆိုရင်\n✅ <b>{thb_get:,.0f} B</b> ရပါမယ်။"
+            else:
+                thb_get = (mmk_amount / 100000) * rate
+                result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (ဘတ်ယူ) ဆိုရင်\n✅ <b>{thb_get:,.2f} B</b> ရပါမယ်။\n(Rate: {rate})"
+        
+        # User WANTS Kyat (Selling THB / Giving Kyat Input?? - Rare: "How much is 100k Kyat worth if I sell Baht?")
+        # Usually implies "ကျပ်ယူ" (Take Kyat) -> selling Baht to get this amount of Kyat
+        else:
+            if mmk_amount < 30000:
+                found = False
+                for item in items:
+                    if float(item['mmkBill']) == mmk_amount:
+                        result_text = f"📱 <b>{mmk_amount:,.0f} Ks</b> (Ph Bill) = <b>{item['thbBill']} B</b>"
+                        found = True; break
+                if not found: result_text = f"⚠️ {mmk_amount:,.0f} အတွက် ဖုန်းဘေ Package မရှိပါ။"
+
+            elif 30000 <= mmk_amount < 100000:
+                calc_rate = th_rate - 5
+                thb_cost = ((mmk_amount / 100000) * calc_rate) + 10
+                result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> ယူလျှင်\n✅ <b>{thb_cost:,.0f} B</b> ကျသင့်ပါမည်။"
+
+            else:
+                rate = th_rate
+                # Wave Pass / Special Rate check inside calculation if keywords exist
+                if 'password' in msg_lower or 'pw' in msg_lower: rate += 15
+                else:
+                    if mmk_amount >= 30000000: rate -= 5
+                    elif mmk_amount >= 10000000: rate -= 4
+                    elif mmk_amount >= 5000000: rate -= 3
+                    elif mmk_amount >= 3000000: rate -= 2
+                    elif mmk_amount >= 1000000: rate -= 1
+                thb_cost = (mmk_amount / 100000) * rate
+                result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> ယူလျှင်\n✅ <b>{thb_cost:,.2f} B</b> ကျသင့်ပါမည်။\n(Rate: {rate})"
+
+    if result_text:
+        bot.reply_to(message, result_text, parse_mode='HTML')
+    else:
+        send_fallback(message)
 
 # --- RUN ---
 if __name__ == "__main__":
