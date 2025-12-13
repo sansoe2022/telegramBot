@@ -71,7 +71,7 @@ def send_fallback(message):
         "ဥပမာ - \n• ဘတ်ပေး 1000 \n• ကျပ်ယူ 1သိန်း\n\n"
         "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက \nကျပ်ပေး (ပမာဏ) သို့မဟုတ် ဘတ်ယူ (ပမာဏ) ရေးပါ</b>\n"
         "ဥပမာ - \n• ကျပ်ပေး 1သိန်း \n• ဘတ်ယူ 1000\n\n"
-        "Wave password(ဆိုင်ထုတ်)စျေး တွက်ချင်ပါက\nWave pw ကျပ်ယူ (ပမာဏ) သို့မဟုတ် Wave pw ဘတ်ပေး (ပမာဏ) ရေးပါ\n"
+        "<b>Wave password(ဆိုင်ထုတ်)စျေး တွက်ချင်ပါက\nWave pw ကျပ်ယူ (ပမာဏ) သို့မဟုတ် Wave pw ဘတ်ပေး (ပမာဏ) ရေးပါ</b>\n"
         "ဥပမာ - \n• Wave pw ကျပ်ယူ 1သိန်း \n• Wave pw ဘတ်ပေး 1000\n\n"
         "လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
     )
@@ -100,7 +100,7 @@ def menu_rate(message):
                 f"Kpay|WavePay|ဘဏ်အကောင့်အားလုံး \nပေါက်စျေးအတိုင်းရပါတယ်\n\n"
                 f"Wave password(ဆိုင်ထုတ်) \nဝန်ဆောင်ခ 15 ဘတ်\n\n"
                 f"ဘဏ်မှတ်ပုံတင်ထုတ် ဝန်ဆောင်ခ 5ဘတ်\n\n"
-                f"<b style='color:red;'>1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်</b>\n")
+                f"<b>1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်</b>\n")
         bot.reply_to(message, text, parse_mode='HTML')
 
 # 2. ဖုန်းဘေဈေး
@@ -109,6 +109,7 @@ def menu_bill(message):
     data = get_data()
     if data:
         items = data.get('items', [])
+        
         markup = InlineKeyboardMarkup()
         for item in items:
             mmk = item.get('mmkBill')
@@ -148,7 +149,7 @@ def menu_help(message):
         "ဥပမာ - \n• ဘတ်ပေး 1000 \n• ကျပ်ယူ 1သိန်း\n\n"
         "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက \nကျပ်ပေး (ပမာဏ) သို့မဟုတ် ဘတ်ယူ (ပမာဏ) ရေးပါ</b>\n"
         "ဥပမာ - \n• ကျပ်ပေး 1သိန်း \n• ဘတ်ယူ 1000\n\n"
-        "Wave password(ဆိုင်ထုတ်)စျေး တွက်ချင်ပါက\nWave pw ကျပ်ယူ (ပမာဏ) သို့မဟုတ် Wave pw ဘတ်ပေး (ပမာဏ) ရေးပါ\n"
+        "<b>Wave password(ဆိုင်ထုတ်)စျေး တွက်ချင်ပါက\nWave pw ကျပ်ယူ (ပမာဏ) သို့မဟုတ် Wave pw ဘတ်ပေး (ပမာဏ) ရေးပါ</b>\n"
         "ဥပမာ - \n• Wave pw ကျပ်ယူ 1သိန်း \n• Wave pw ဘတ်ပေး 1000\n\n"
         "လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
     )
@@ -205,26 +206,19 @@ def analyze_message(message):
 
     # --- CALCULATION LOGIC ---
 
-    # SPECIAL CASE: WAVE PASSWORD (SHOP CASH OUT)
+    # SPECIAL CASE: WAVE PASSWORD
     if is_wave_pass:
-        # Check: Wave Pass is only allowed for Selling Baht (Giving Baht -> Taking Kyat)
-        # If user is trying to "Buy Baht" with Wave Pass (e.g. "Kyat Pay Wave Pass"), reject it.
         if user_wants_thb:
              bot.reply_to(message, "❌ Wave Password (ဆိုင်ထုတ်) သည် ဘတ်ပေး/ကျပ်ယူ အတွက်သာ ရရှိနိုင်ပါသည်။")
              return
         
-        # Logic for Wave Pass (Baht Pay)
-        # Convert Baht Amount to approx Kyat to check limits
         if is_thb_input:
-             # Input is Baht (e.g., "5000 Baht Wave Pass")
              thb_val = amount
              approx_kyat = (thb_val / th_rate) * 100000
         else:
-             # Input is Kyat (e.g. "1 Lakh Wave Pass")
              approx_kyat = amount
-             thb_val = (amount / 100000) * (th_rate + 15) # Approx just for validation
+             thb_val = (amount / 100000) * (th_rate + 15)
 
-        # Constraint: < 1 Lakh
         if approx_kyat < 100000:
              text = "⚠️ Wave Password (ဆိုင်ထုတ်) သည် ၁ သိန်းကျပ်အောက် လက်မခံပါခင်ဗျာ။\nAdmin သို့ ဆက်သွယ်မေးမြန်းနိုင်ပါသည်။"
              markup = InlineKeyboardMarkup()
@@ -232,30 +226,16 @@ def analyze_message(message):
              bot.reply_to(message, text, reply_markup=markup)
              return
         
-        # Rates:
-        # > 10 Lakhs: thRate + 10
-        # 1L - 10L: thRate + 15
         wave_rate = th_rate
         if approx_kyat >= 1000000: # 10 Lakhs
              wave_rate += 10
         else:
              wave_rate += 15
              
-        # Final Calculation
         if is_thb_input:
-             # Baht Input -> Calc Kyat
              mmk_get = (thb_val / wave_rate) * 100000
              input_show = f"🇹🇭 <b>{thb_val:,.0f} B</b> (Wave Pass)"
         else:
-             # Kyat Input -> Calc Baht cost? No, usually "I want 1 Lakh Kyat via Wave Pass"
-             # Wait, usually Wave Pass means User SELLS Kyat to get Baht?
-             # User prompt said: "Those commands are only for Baht Pay Kyat Take".
-             # So User Gives Baht -> Admin sends Kyat via Wave Code?
-             # OR User sends Wave Code (Kyat) -> Admin gives Baht?
-             # Prompt said: "thRate+15". thRate is Selling Baht Rate.
-             # Formula for Selling Baht (getting Kyat): (Baht / Rate) * 100000.
-             # If Rate is Higher (815+15=830), User gets LESS Kyat. This implies Fee deduction.
-             # So I will stick to "User Gives Baht -> Gets Kyat".
              mmk_get = amount
              thb_val = (mmk_get / 100000) * wave_rate
              input_show = f"🇹🇭 <b>{thb_val:,.2f} B</b> (Wave Pass)"
@@ -266,7 +246,7 @@ def analyze_message(message):
                        f"(Rate: {wave_rate})")
 
 
-    # SCENARIO A: INPUT IS BAHT (Standard)
+    # SCENARIO A: INPUT IS BAHT (User types "5000 B" or "ဘတ်ပေး 5000")
     elif is_thb_input:
         thb_amount = amount
         
@@ -301,18 +281,18 @@ def analyze_message(message):
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                      result_text = f"🇹🇭 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n🇲🇲 <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                 # 🔥 SYMMETRICAL LOGIC FOR LARGE AMOUNTS 🔥
+                 # 🔥 UPDATED LOGIC FOR SELLING BAHT TIERS 🔥
                  approx_kyat = (thb_amount / th_rate) * 100000
                  
                  calc_rate = th_rate
-                 # Apply Tiered Logic (Same tiers as Buying, but Reducing rate to benefit user)
-                 if approx_kyat >= 10000000: calc_rate -= 4
-                 elif approx_kyat >= 5000000: calc_rate -= 3
-                 elif approx_kyat >= 3000000: calc_rate -= 2
-                 elif approx_kyat >= 1000000: calc_rate -= 1
                  
                  if approx_kyat >= 100000:
-                    # > 1 Lakh: No Fee, Tiered Rate
+                    # Apply Tiered Logic for Large Amounts
+                    if approx_kyat >= 10000000: calc_rate -= 4   # 100 Lakhs
+                    elif approx_kyat >= 5000000: calc_rate -= 3  # 50 Lakhs
+                    elif approx_kyat >= 3000000: calc_rate -= 2  # 30 Lakhs
+                    elif approx_kyat >= 1000000: calc_rate -= 1  # 10 Lakhs
+                    
                     mmk_get = (thb_amount / calc_rate) * 100000
                     result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
                                    f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။\n"
@@ -324,7 +304,7 @@ def analyze_message(message):
                     result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
                                    f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
 
-    # SCENARIO B: INPUT IS KYAT (Standard)
+    # SCENARIO B: INPUT IS KYAT (User types "100000" or "ကျပ်ပေး 100000")
     else:
         mmk_amount = amount
         
@@ -359,7 +339,7 @@ def analyze_message(message):
                 result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> ယူလျှင်\n🇹🇭 <b>{thb_cost:,.0f} B</b> ကျသင့်ပါမည်။"
 
             else:
-                # 🔥 SYMMETRICAL LOGIC FOR LARGE AMOUNTS 🔥
+                # 🔥 UPDATED LOGIC FOR SELLING BAHT TIERS (KYAT INPUT) 🔥
                 rate = th_rate
                 if mmk_amount >= 10000000: rate -= 4
                 elif mmk_amount >= 5000000: rate -= 3
