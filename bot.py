@@ -112,12 +112,10 @@ def menu_bill(message):
         for item in items:
             mmk = item.get('mmkBill')
             thb = item.get('thbBill')
-            
             try:
                 mmk_fmt = f"{int(mmk):,}"
             except:
                 mmk_fmt = mmk
-
             btn_text = f"🇹🇭 {thb} B   ➔   🇲🇲 {mmk_fmt} Ks"
             markup.add(InlineKeyboardButton(btn_text, callback_data="ignore"))
 
@@ -226,14 +224,18 @@ def analyze_message(message):
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                      result_text = f"🇹🇭 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n🇲🇲 <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                 # 🔥 FIXED LOGIC HERE 🔥
-                 # 1 သိန်းနှင့်အထက် (815 ဘတ်နှင့်အထက်) ဆိုရင် Rate အပြည့်တွက်မယ်
+                 # 🔥 FIXED LOGIC FOR 5000 B 🔥
+                 # If amount >= Rate (means approx 1 Lakh Kyat or more) -> No Fee
                  if thb_amount >= th_rate:
                     calc_rate = th_rate / 100000
+                    # No fee deduction for large amounts
+                    mmk_get = thb_amount / calc_rate 
                  else:
+                    # Small amounts (< 1 Lakh)
                     calc_rate = (th_rate - 5) / 100000
-                    
-                 mmk_get = (thb_amount - 10) / calc_rate
+                    # Fee deduction
+                    mmk_get = (thb_amount - 10) / calc_rate
+                 
                  mmk_clean = round(mmk_get / 100) * 100 
                  result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
                                 f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
