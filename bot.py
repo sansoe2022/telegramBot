@@ -74,8 +74,8 @@ def send_fallback(message):
         f"လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
     )
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("Adminကို ဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
-    bot.reply_to(message, text, reply_markup=markup)
+    markup.add(InlineKeyboardButton("👤 Adminကို ဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
+    bot.reply_to(message, text, parse_mode='HTML')
 
 # --- COMMAND HANDLERS ---
 @bot.message_handler(commands=['start'])
@@ -98,7 +98,7 @@ def menu_rate(message):
                 f"Kpay|WavePay|ဘဏ်အကောင့်အားလုံး \nပေါက်စျေးအတိုင်းရပါတယ်\n\n"
                 f"Wave password(ဆိုင်ထုတ်) \nဝန်ဆောင်ခ 15 ဘတ်\n\n"
                 f"ဘဏ်မှတ်ပုံတင်ထုတ် ဝန်ဆောင်ခ 5ဘတ်\n\n"
-                f"1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်\n")
+                f"<b style="color:red;">1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်</b>\n")
         bot.reply_to(message, text, parse_mode='HTML')
 
 # 2. ဖုန်းဘေဈေး
