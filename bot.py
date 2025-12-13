@@ -101,29 +101,24 @@ def menu_rate(message):
                 f"<b style='color:red;'>1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်</b>\n")
         bot.reply_to(message, text, parse_mode='HTML')
 
-# 2. ဖုန်းဘေဈေး (UI UPDATED HERE - CLEAN CARD STYLE)
+# 2. ဖုန်းဘေဈေး
 @bot.message_handler(func=lambda message: message.text == "📱 ဖုန်းဘေဈေး")
 def menu_bill(message):
     data = get_data()
     if data:
         items = data.get('items', [])
         
-        # Button အကွက်လေးများဖြင့် ပြသရန် ပြင်ဆင်ခြင်း
         markup = InlineKeyboardMarkup()
         for item in items:
             mmk = item.get('mmkBill')
             thb = item.get('thbBill')
             
-            # ပိုက်ဆံပမာဏကို ကော်မာခံခြင်း (e.g., 1,000)
             try:
                 mmk_fmt = f"{int(mmk):,}"
             except:
                 mmk_fmt = mmk
 
-            # Button စာသားပုံစံ: 🇹🇭 10 B  ➔  🇲🇲 1,000 Ks
             btn_text = f"🇹🇭 {thb} B   ➔   🇲🇲 {mmk_fmt} Ks"
-            
-            # နှိပ်လို့ရသော Button (နှိပ်ရင် ဘာမှမဖြစ်အောင် ignore ထည့်ထားသည်)
             markup.add(InlineKeyboardButton(btn_text, callback_data="ignore"))
 
         bot.reply_to(message, "📱 <b>မြန်မာဖုန်းဘေဈေးနှုန်းများ</b>", reply_markup=markup, parse_mode='HTML')
@@ -158,15 +153,11 @@ def menu_help(message):
     )
     bot.reply_to(message, text, parse_mode='HTML')
 
-# --- CALLBACK QUERY HANDLER (Added 'ignore' for Phone Bill Buttons) ---
 @bot.callback_query_handler(func=lambda call: True)
 def handle_query(call):
-    # ဖုန်းဘေဈေးခလုတ်များ နှိပ်မိရင် ဘာမှမဖြစ်အောင် ကာကွယ်ခြင်း
     if call.data == "ignore":
         bot.answer_callback_query(call.id)
         return
-        
-    # အခြား Callback များ (ရှိခဲ့လျှင်)
     if call.data == "check_rate": menu_rate(call.message)
     elif call.data == "check_bill": menu_bill(call.message)
     elif call.data == "transfer": menu_transfer(call.message)
@@ -178,17 +169,14 @@ def analyze_message(message):
     msg = message.text
     msg_lower = msg.lower()
     
-    # 1. Skip Menu Texts
     if msg in ["💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ လမ်းညွှန်"]:
         return
 
-    # 2. Check for Amount
     amount = parse_amount(msg_lower)
     if not amount:
         send_fallback(message)
         return
 
-    # 3. Data Fetching
     data = get_data()
     if not data: return 
 
@@ -196,7 +184,6 @@ def analyze_message(message):
     mm_rate = float(data.get('mmRate', 795))
     items = data.get('items', [])
 
-    # 4. Determine Intent
     is_thb_input = any(x in msg_lower for x in ['ဘတ်', 'b', 'thb'])
     
     keywords_buy_thb = ['ကျပ်ပေး', 'ဘတ်ယူ', 'ရမလဲ', 'ရလဲ', 'ဘတ်လို', 'buy', 'need']
@@ -239,7 +226,13 @@ def analyze_message(message):
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                      result_text = f"🇹🇭 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n🇲🇲 <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                 calc_rate = (th_rate - 5) / 100000
+                 # 🔥 FIXED LOGIC HERE 🔥
+                 # 1 သိန်းနှင့်အထက် (815 ဘတ်နှင့်အထက်) ဆိုရင် Rate အပြည့်တွက်မယ်
+                 if thb_amount >= th_rate:
+                    calc_rate = th_rate / 100000
+                 else:
+                    calc_rate = (th_rate - 5) / 100000
+                    
                  mmk_get = (thb_amount - 10) / calc_rate
                  mmk_clean = round(mmk_get / 100) * 100 
                  result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
