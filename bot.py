@@ -202,7 +202,7 @@ def analyze_message(message):
     if is_thb_input:
         thb_amount = amount
         
-        # User WANTS Baht (Buying THB with THB Input - Rare: "I need 500 Baht")
+        # User WANTS Baht (Buying THB)
         if user_wants_thb and not user_wants_mmk:
             calc_rate = mm_rate / 100000
             if thb_amount >= mm_rate:
@@ -218,33 +218,40 @@ def analyze_message(message):
                            f"(Rate: {mm_rate}{fee_msg})")
 
         # User GIVES Baht (Selling THB / Buying Kyat)
-        # "ဘတ်ပေး 5000" logic is now EXACTLY same as "ကျပ်ယူ > 1 Lakh" logic
         else:
             if thb_amount <= 260:
                  if items:
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                      result_text = f"🇹🇭 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n🇲🇲 <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                 # 🔥 LOGIC SYNCED WITH 'KYAT TAKE' 🔥
-                 # 1 Lakh Kyat costs exactly 'th_rate' (e.g. 815 Baht)
-                 # So if Input Baht >= 815, it counts as a Large Amount (>= 1 Lakh Kyat)
+                 # 🔥 FIXED LOGIC FOR 'BAHT PAY' to MATCH 'KYAT TAKE' 🔥
+                 # Step 1: Estimate the Kyat amount to check for tiered rates
+                 # We use base rate to estimate
+                 approx_kyat = (thb_amount / th_rate) * 100000
                  
-                 if thb_amount >= th_rate:
-                    # Case: >= 1 Lakh Kyat Equivalent (e.g. 5000 Baht)
-                    # Logic: No Fee, Full Rate.
-                    # Formula: (Baht / Rate) * 100000
-                    calc_rate = th_rate
-                    mmk_get = (thb_amount / calc_rate) * 100000
+                 calc_rate = th_rate
+                 # Apply Tiered Logic based on estimated Kyat (Same as Kyat Input Scenario)
+                 if 'password' in msg_lower or 'pw' in msg_lower: calc_rate += 15
                  else:
-                    # Case: < 1 Lakh Kyat Equivalent (e.g. 500 Baht)
-                    # Logic: Fee 10 Baht, Rate - 5
-                    # Formula: ((Baht - 10) / (Rate - 5)) * 100000
-                    calc_rate = th_rate - 5
-                    mmk_get = ((thb_amount - 10) / calc_rate) * 100000
+                    if approx_kyat >= 30000000: calc_rate -= 5
+                    elif approx_kyat >= 10000000: calc_rate -= 4
+                    elif approx_kyat >= 5000000: calc_rate -= 3
+                    elif approx_kyat >= 3000000: calc_rate -= 2
+                    elif approx_kyat >= 1000000: calc_rate -= 1
                  
-                 mmk_clean = round(mmk_get / 100) * 100 
-                 result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
-                                f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
+                 # Step 2: Calculate
+                 if approx_kyat >= 100000:
+                    # Large Amount: No fee, use tiered rate
+                    mmk_get = (thb_amount / calc_rate) * 100000
+                    result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
+                                   f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။\n"
+                                   f"(Rate: {calc_rate})")
+                 else:
+                    # Small Amount (< 1 Lakh Kyat): Fee 10 Baht, Rate - 5
+                    small_rate = th_rate - 5
+                    mmk_get = ((thb_amount - 10) / small_rate) * 100000
+                    result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
+                                   f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
 
     # SCENARIO B: INPUT IS KYAT (User types "100000" or "ကျပ်ပေး 100000")
     else:
