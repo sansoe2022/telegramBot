@@ -7,7 +7,7 @@ import requests
 import re
 
 # --- CONFIGURATION ---
-# ⚠️ သင့် Token အမှန်ကို ပြန်ထည့်ပါ
+# ⚠️ Make sure to use your correct Token
 API_TOKEN = '8392015081:AAH7kW0EtCUTQDgOLM3OEloiEJfQBjMoDec'
 JSON_URL = 'https://raw.githubusercontent.com/sansoe2022/mwd-web/refs/heads/main/api.json'
 ADMIN_USERNAME = "sansoe2021"
@@ -84,7 +84,7 @@ def send_welcome(message):
 
 # --- MENU ACTIONS ---
 
-# 1. ယခုငွေဈေး
+# 1. Today Rate
 @bot.message_handler(func=lambda message: message.text == "💰 ယခုငွေဈေး")
 def menu_rate(message):
     data = get_data()
@@ -101,7 +101,7 @@ def menu_rate(message):
                 f"<b style='color:red;'>1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်</b>\n")
         bot.reply_to(message, text, parse_mode='HTML')
 
-# 2. ဖုန်းဘေဈေး
+# 2. Phone Bill
 @bot.message_handler(func=lambda message: message.text == "📱 ဖုန်းဘေဈေး")
 def menu_bill(message):
     data = get_data()
@@ -121,7 +121,7 @@ def menu_bill(message):
 
         bot.reply_to(message, "📱 <b>မြန်မာဖုန်းဘေဈေးနှုန်းများ</b>", reply_markup=markup, parse_mode='HTML')
 
-# 3. ငွေလွှဲမယ်
+# 3. Transfer
 @bot.message_handler(func=lambda message: message.text == "💸 ငွေလွှဲမယ်")
 def menu_transfer(message):
     text = "ငွေလွှဲလိုပါက Adminကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ် @sansoe2021"
@@ -129,7 +129,7 @@ def menu_transfer(message):
     markup.add(InlineKeyboardButton("👤 Admin ကိုဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
     bot.reply_to(message, text, reply_markup=markup)
 
-# 4. Download App
+# 4. Download
 @bot.message_handler(func=lambda message: message.text == "📥 MWD Zay ဒေါင်းရန်")
 def menu_download(message):
     data = get_data()
@@ -138,7 +138,7 @@ def menu_download(message):
     markup.add(InlineKeyboardButton("📥 Click here to Download", url=link))
     bot.reply_to(message, "အောက်ပါ Button ကို နှိပ်၍ MWD Zayကို Download ရယူနိုင်ပါတယ်ခင်ဗျာ။", reply_markup=markup)
 
-# 5. အကူအညီ
+# 5. Help
 @bot.message_handler(func=lambda message: message.text == "❓ လမ်းညွှန်")
 def menu_help(message):
     text = (
@@ -198,11 +198,11 @@ def analyze_message(message):
 
     # --- CALCULATION LOGIC ---
 
-    # SCENARIO A: INPUT IS BAHT
+    # SCENARIO A: INPUT IS BAHT (User types "5000 B" or "ဘတ်ပေး 5000")
     if is_thb_input:
         thb_amount = amount
         
-        # User WANTS Baht
+        # User WANTS Baht (Buying THB with THB Input - Rare: "I need 500 Baht")
         if user_wants_thb and not user_wants_mmk:
             calc_rate = mm_rate / 100000
             if thb_amount >= mm_rate:
@@ -219,34 +219,38 @@ def analyze_message(message):
 
         # User GIVES Baht (Selling THB / Buying Kyat)
         else:
+            # Check Phone Bill Range (<= 260 Baht)
             if thb_amount <= 260:
                  if items:
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                      result_text = f"🇹🇭 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n🇲🇲 <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                 # 🔥 FIXED LOGIC FOR 5000 B 🔥
-                 # If amount >= Rate (means approx 1 Lakh Kyat or more) -> No Fee
-                 if thb_amount >= th_rate:
-                    calc_rate = th_rate / 100000
-                    # No fee deduction for large amounts
-                    mmk_get = thb_amount / calc_rate 
-                 else:
-                    # Small amounts (< 1 Lakh)
-                    calc_rate = (th_rate - 5) / 100000
-                    # Fee deduction
-                    mmk_get = (thb_amount - 10) / calc_rate
+                 # 🔥 FIXED LOGIC FOR ANY AMOUNT 🔥
+                 # Calculate approximate Kyat value using base rate
+                 # If > 1 Lakh Kyat -> Use full rate, No fee.
+                 # If < 1 Lakh Kyat -> Use rate-5, Deduct 10 Baht.
                  
-                 mmk_clean = round(mmk_get / 100) * 100 
-                 result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
-                                f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
+                 approx_kyat = (thb_amount / th_rate) * 100000
+                 
+                 if approx_kyat >= 100000:
+                    calc_rate = th_rate / 100000
+                    mmk_get = thb_amount / calc_rate
+                    result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
+                                   f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
+                 else:
+                    calc_rate = (th_rate - 5) / 100000
+                    mmk_get = (thb_amount - 10) / calc_rate
+                    result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
+                                   f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
 
-    # SCENARIO B: INPUT IS KYAT
+    # SCENARIO B: INPUT IS KYAT (User types "100000" or "ကျပ်ပေး 100000")
     else:
         mmk_amount = amount
         
-        # User WANTS Baht
+        # User WANTS Baht (Buying THB)
         if user_wants_thb or (not user_wants_mmk):
             rate = mm_rate
+            # 10 Lakhs logic
             if mmk_amount >= 10000000: rate += 5
             elif mmk_amount >= 5000000: rate += 4
             elif mmk_amount >= 3000000: rate += 3
@@ -259,7 +263,7 @@ def analyze_message(message):
                 thb_get = (mmk_amount / 100000) * rate
                 result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (🇹🇭ဘတ်ယူ) ဆိုရင်\n🇹🇭 <b>{thb_get:,.2f} B</b> ရပါမယ်။\n(Rate: {rate})"
         
-        # User WANTS Kyat
+        # User WANTS Kyat (Selling THB / Giving Kyat)
         else:
             if mmk_amount < 30000:
                 found = False
