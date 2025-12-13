@@ -220,7 +220,7 @@ def analyze_message(message):
              thb_val = (amount / 100000) * (th_rate + 15)
 
         if approx_kyat < 100000:
-             text = "⚠️ Wave Password (ဆိုင်ထုတ်) သည် ၁ သိန်းကျပ်အောက် လက်မခံပါခင်ဗျာ။\nAdmin သို့ ဆက်သွယ်မေးမြန်းနိုင်ပါသည်။"
+             text = "⚠️ Wave Password (ဆိုင်ထုတ်) သည် ၁ သိန်းကျပ်အောက် လွှဲချင်ပါက\nAdmin သို့ ဆက်သွယ်မေးမြန်းနိုင်ပါသည်။"
              markup = InlineKeyboardMarkup()
              markup.add(InlineKeyboardButton("👤 Adminကို ဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
              bot.reply_to(message, text, reply_markup=markup)
@@ -234,11 +234,11 @@ def analyze_message(message):
              
         if is_thb_input:
              mmk_get = (thb_val / wave_rate) * 100000
-             input_show = f"🇹🇭 <b>{thb_val:,.0f} B</b> (Wave Pass)"
+             input_show = f"Wave Password(ဆိုင်ထုတ်)\n🇹🇭 <b>{thb_val:,.0f} B</b>"
         else:
              mmk_get = amount
              thb_val = (mmk_get / 100000) * wave_rate
-             input_show = f"🇹🇭 <b>{thb_val:,.2f} B</b> (Wave Pass)"
+             input_show = f"Wave password(ဆိုင်ထုတ်)🇹🇭 <b>{thb_val:,.2f} B</b>"
 
         mmk_clean = round(mmk_get / 100) * 100
         result_text = (f"{input_show} ရောင်းရင်\n"
