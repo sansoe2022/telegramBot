@@ -59,13 +59,13 @@ def keep_alive():
 # --- MENUS ---
 def get_reply_menu():
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    markup.add("💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ အကူအညီ")
+    markup.add("💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ လမ်းညွှန်")
     return markup
 
 # --- HELPERS FOR FALLBACK ---
 def send_fallback(message):
     text = (
-        f"ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ\n\n"
+        f"<b>ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ</b>\n\n"
         f"<b>အသုံးပြုပုံ လမ်းညွှန်</b>\n\n"
         f"🇲🇲 <b>ကျပ်ငွေလိုချင်ပါက \nဘတ်ပေး (ပမာဏ) သို့မဟုတ် ကျပ်ယူ (ပမာဏ) ရေးပါ</b>\n"
         f"ဥပမာ - \n• ဘတ်ပေး 1000 ဘတ် \n• ကျပ်ယူ 1သိန်းကျပ်\n\n"
@@ -130,7 +130,7 @@ def menu_download(message):
     bot.reply_to(message, "အောက်ပါ Button ကို နှိပ်၍ MWD Zayကို Download ရယူနိုင်ပါတယ်ခင်ဗျာ။", reply_markup=markup)
 
 # 5. အကူအညီ
-@bot.message_handler(func=lambda message: message.text == "❓ အကူအညီ")
+@bot.message_handler(func=lambda message: message.text == "❓ လမ်းညွှန်")
 def menu_help(message):
     text = (
         "<b>အသုံးပြုပုံ လမ်းညွှန်</b>\n\n"
@@ -150,7 +150,7 @@ def analyze_message(message):
     msg_lower = msg.lower()
     
     # 1. Skip Menu Texts (They are handled above)
-    if msg in ["💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ အကူအညီ"]:
+    if msg in ["💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ လမ်းညွှန်"]:
         return
 
     # 2. Check for Amount (Calculation Trigger)
