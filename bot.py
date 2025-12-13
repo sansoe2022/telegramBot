@@ -65,13 +65,13 @@ def get_reply_menu():
 # --- HELPERS FOR FALLBACK ---
 def send_fallback(message):
     text = (
-        "ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ\n\n"
-    "<b>အသုံးပြုပုံ လမ်းညွှန်</b>\n\n"
-        "🇲🇲 <b>ကျပ်ငွေလိုချင်ပါက \nဘတ်ပေး (ပမာဏ) သို့မဟုတ် ကျပ်ယူ (ပမာဏ) ရေးပါ</b>\n"
-        "ဥပမာ - \n• ဘတ်ပေး 1000 ဘတ် \n• ကျပ်ယူ 1သိန်းကျပ်\n\n"
-        "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက \nကျပ်ပေး (ပမာဏ) သို့မဟုတ် ဘတ်ယူ (ပမာဏ) ရေးပါ</b>\n"
-        "ဥပမာ - \n• ကျပ်ပေး 1သိန်းကျပ် \n• ဘတ်ယူ 1000 ဘတ်\n\n"
-        "လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
+        f"ကျွန်တော်က ငွေစျေးတွက်ပေးတဲ့ bot ဖြစ်ပါတယ် တခြားအကြောင်းအရာတွေ မဖြေဆိုနိုင်ပါခင်ဗျာ ငွေစျေး အသေးစိတ်သိလိုပါက Admin ကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်ခင်ဗျာ\n\n"
+        f"<b>အသုံးပြုပုံ လမ်းညွှန်</b>\n\n"
+        f"🇲🇲 <b>ကျပ်ငွေလိုချင်ပါက \nဘတ်ပေး (ပမာဏ) သို့မဟုတ် ကျပ်ယူ (ပမာဏ) ရေးပါ</b>\n"
+        f"ဥပမာ - \n• ဘတ်ပေး 1000 ဘတ် \n• ကျပ်ယူ 1သိန်းကျပ်\n\n"
+        f"🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက \nကျပ်ပေး (ပမာဏ) သို့မဟုတ် ဘတ်ယူ (ပမာဏ) ရေးပါ</b>\n"
+        f"ဥပမာ - \n• ကျပ်ပေး 1သိန်းကျပ် \n• ဘတ်ယူ 1000 ဘတ်\n\n"
+        f"လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
     )
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("Adminကို ဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
@@ -115,9 +115,9 @@ def menu_bill(message):
 # 3. ငွေလွှဲမယ်
 @bot.message_handler(func=lambda message: message.text == "💸 ငွေလွှဲမယ်")
 def menu_transfer(message):
-    text = "ငွေလွှဲလိုပါက Adminကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ်"
+    text = "ငွေလွှဲလိုပါက Adminကို တိုက်ရိုက်ဆက်သွယ်နိုင်ပါတယ် @sansoe2021"
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("Admin ကိုဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
+    markup.add(InlineKeyboardButton("👤 Admin ကိုဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
     bot.reply_to(message, text, reply_markup=markup)
 
 # 4. Download App
