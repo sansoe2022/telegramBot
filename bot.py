@@ -202,10 +202,22 @@ def analyze_message(message):
     if is_thb_input:
         thb_amount = amount
         
-        # User WANTS Baht (Buying THB)
+        # User WANTS Baht (Buying THB with THB Input)
+        # e.g. "I want 20,000 Baht" or "ဘတ်ယူ 20000"
         if user_wants_thb and not user_wants_mmk:
-            calc_rate = mm_rate / 100000
-            if thb_amount >= mm_rate:
+            # 🔥 NEW FIXED LOGIC FOR BAHT INPUT (TIERED RATES) 🔥
+            # Estimate Kyat cost to apply tiers (same as Kyat Input)
+            approx_mmk_cost = (thb_amount / mm_rate) * 100000
+            
+            rate = mm_rate
+            if approx_mmk_cost >= 10000000: rate += 5
+            elif approx_mmk_cost >= 5000000: rate += 4
+            elif approx_mmk_cost >= 3000000: rate += 3
+            elif approx_mmk_cost >= 1000000: rate += 2 # 10 Lakhs+ gets +2
+
+            calc_rate = rate / 100000
+            
+            if thb_amount >= rate:
                 mmk_cost = thb_amount / calc_rate
                 fee_msg = ""
             else:
@@ -215,43 +227,29 @@ def analyze_message(message):
             mmk_clean = round(mmk_cost / 100) * 100
             result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> လိုချင်ရင်\n"
                            f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ကျသင့်ပါမယ်။\n"
-                           f"(Rate: {mm_rate}{fee_msg})")
+                           f"(Rate: {rate}{fee_msg})")
 
         # User GIVES Baht (Selling THB / Buying Kyat)
+        # e.g. "5000 B" or "ဘတ်ပေး 5000"
         else:
             if thb_amount <= 260:
                  if items:
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
                      result_text = f"🇹🇭 <b>{thb_amount} B</b> ဝန်းကျင်ဆိုရင်\n🇲🇲 <b>{closest_item['mmkBill']} Ks</b> (Ph Bill Rate) ရပါမယ်ခင်ဗျာ။"
             else:
-                 # 🔥 FIXED LOGIC FOR 'BAHT PAY' to MATCH 'KYAT TAKE' 🔥
-                 # Step 1: Estimate the Kyat amount to check for tiered rates
-                 # We use base rate to estimate
-                 approx_kyat = (thb_amount / th_rate) * 100000
-                 
-                 calc_rate = th_rate
-                 # Apply Tiered Logic based on estimated Kyat (Same as Kyat Input Scenario)
-                 if 'password' in msg_lower or 'pw' in msg_lower: calc_rate += 15
-                 else:
-                    if approx_kyat >= 30000000: calc_rate -= 5
-                    elif approx_kyat >= 10000000: calc_rate -= 4
-                    elif approx_kyat >= 5000000: calc_rate -= 3
-                    elif approx_kyat >= 3000000: calc_rate -= 2
-                    elif approx_kyat >= 1000000: calc_rate -= 1
-                 
-                 # Step 2: Calculate
-                 if approx_kyat >= 100000:
-                    # Large Amount: No fee, use tiered rate
+                 # 🔥 LOGIC SYNCED WITH 'KYAT TAKE' 🔥
+                 if thb_amount >= th_rate:
+                    # >= 1 Lakh Kyat Equivalent: Full Rate, No Fee
+                    calc_rate = th_rate
                     mmk_get = (thb_amount / calc_rate) * 100000
-                    result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
-                                   f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။\n"
-                                   f"(Rate: {calc_rate})")
                  else:
-                    # Small Amount (< 1 Lakh Kyat): Fee 10 Baht, Rate - 5
-                    small_rate = th_rate - 5
-                    mmk_get = ((thb_amount - 10) / small_rate) * 100000
-                    result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
-                                   f"🇲🇲 <b>{round(mmk_get/100)*100:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
+                    # < 1 Lakh Kyat Equivalent: Rate - 5, Fee 10
+                    calc_rate = th_rate - 5
+                    mmk_get = ((thb_amount - 10) / calc_rate) * 100000
+                 
+                 mmk_clean = round(mmk_get / 100) * 100 
+                 result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
+                                f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
 
     # SCENARIO B: INPUT IS KYAT (User types "100000" or "ကျပ်ပေး 100000")
     else:
