@@ -75,7 +75,7 @@ def send_fallback(message):
     )
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("👤 Adminကို ဆက်သွယ်ရန်", url=f"https://t.me/{ADMIN_USERNAME}"))
-    bot.reply_to(message, text, parse_mode='HTML')
+    bot.reply_to(message, text, parse_mode='HTML', reply_markup=markup)
 
 # --- COMMAND HANDLERS ---
 @bot.message_handler(commands=['start'])
@@ -101,16 +101,32 @@ def menu_rate(message):
                 f"<b style='color:red;'>1သိန်းကျပ်အောက် ဖြစ်ပါက ဖုန်းဘေစျေးနှုန်းအတိုင်း တွက်ပါတယ်</b>\n")
         bot.reply_to(message, text, parse_mode='HTML')
 
-# 2. ဖုန်းဘေဈေး
+# 2. ဖုန်းဘေဈေး (UI UPDATED HERE - CLEAN CARD STYLE)
 @bot.message_handler(func=lambda message: message.text == "📱 ဖုန်းဘေဈေး")
 def menu_bill(message):
     data = get_data()
     if data:
         items = data.get('items', [])
-        text = "📱 <b>မြန်မာဖုန်းဘေဈေးနှုန်းများ</b>\n\n"
+        
+        # Button အကွက်လေးများဖြင့် ပြသရန် ပြင်ဆင်ခြင်း
+        markup = InlineKeyboardMarkup()
         for item in items:
-            text += f"🇲🇲 {item.get('mmkBill')} Ks = 🇹🇭 {item.get('thbBill')} B\n"
-        bot.reply_to(message, text, parse_mode='HTML')
+            mmk = item.get('mmkBill')
+            thb = item.get('thbBill')
+            
+            # ပိုက်ဆံပမာဏကို ကော်မာခံခြင်း (e.g., 1,000)
+            try:
+                mmk_fmt = f"{int(mmk):,}"
+            except:
+                mmk_fmt = mmk
+
+            # Button စာသားပုံစံ: 🇹🇭 10 B  ➔  🇲🇲 1,000 Ks
+            btn_text = f"🇹🇭 {thb} B   ➔   🇲🇲 {mmk_fmt} Ks"
+            
+            # နှိပ်လို့ရသော Button (နှိပ်ရင် ဘာမှမဖြစ်အောင် ignore ထည့်ထားသည်)
+            markup.add(InlineKeyboardButton(btn_text, callback_data="ignore"))
+
+        bot.reply_to(message, "📱 <b>မြန်မာဖုန်းဘေဈေးနှုန်းများ</b>", reply_markup=markup, parse_mode='HTML')
 
 # 3. ငွေလွှဲမယ်
 @bot.message_handler(func=lambda message: message.text == "💸 ငွေလွှဲမယ်")
@@ -142,6 +158,19 @@ def menu_help(message):
     )
     bot.reply_to(message, text, parse_mode='HTML')
 
+# --- CALLBACK QUERY HANDLER (Added 'ignore' for Phone Bill Buttons) ---
+@bot.callback_query_handler(func=lambda call: True)
+def handle_query(call):
+    # ဖုန်းဘေဈေးခလုတ်များ နှိပ်မိရင် ဘာမှမဖြစ်အောင် ကာကွယ်ခြင်း
+    if call.data == "ignore":
+        bot.answer_callback_query(call.id)
+        return
+        
+    # အခြား Callback များ (ရှိခဲ့လျှင်)
+    if call.data == "check_rate": menu_rate(call.message)
+    elif call.data == "check_bill": menu_bill(call.message)
+    elif call.data == "transfer": menu_transfer(call.message)
+
 
 # --- MAIN MESSAGE ANALYZER ---
 @bot.message_handler(func=lambda message: True)
@@ -149,58 +178,46 @@ def analyze_message(message):
     msg = message.text
     msg_lower = msg.lower()
     
-    # 1. Skip Menu Texts (They are handled above)
+    # 1. Skip Menu Texts
     if msg in ["💰 ယခုငွေဈေး", "📱 ဖုန်းဘေဈေး", "💸 ငွေလွှဲမယ်", "📥 MWD Zay ဒေါင်းရန်", "❓ လမ်းညွှန်"]:
         return
 
-    # 2. Check for Amount (Calculation Trigger)
+    # 2. Check for Amount
     amount = parse_amount(msg_lower)
-    
-    # ဂဏန်းမပါရင် (သို့) တွက်ချက်လို့မရရင် Fallback ပို့မယ်
     if not amount:
         send_fallback(message)
         return
 
     # 3. Data Fetching
     data = get_data()
-    if not data: return # API Error fallback
+    if not data: return 
 
     th_rate = float(data.get('thRate', 815))
     mm_rate = float(data.get('mmRate', 795))
     items = data.get('items', [])
 
-    # 4. Determine Intent (Buying THB vs Buying MMK)
+    # 4. Determine Intent
     is_thb_input = any(x in msg_lower for x in ['ဘတ်', 'b', 'thb'])
     
-    # Intent Mapping
-    # Buying THB (Want Baht / Give Kyat) Keywords:
-    # "ကျပ်ပေး" (Give Kyat), "ဘတ်ယူ" (Take Baht), "ရမလဲ", "ဘတ်လို"
     keywords_buy_thb = ['ကျပ်ပေး', 'ဘတ်ယူ', 'ရမလဲ', 'ရလဲ', 'ဘတ်လို', 'buy', 'need']
-    
-    # Buying MMK (Want Kyat / Give Baht) Keywords:
-    # "ဘတ်ပေး" (Give Baht), "ကျပ်ယူ" (Take Kyat)
     keywords_buy_mmk = ['ဘတ်ပေး', 'ကျပ်ယူ']
 
-    # Logic Detection
     user_wants_thb = any(k in msg_lower for k in keywords_buy_thb)
     user_wants_mmk = any(k in msg_lower for k in keywords_buy_mmk)
 
-    # Contextual Fallback for Plain Numbers
     if not user_wants_thb and not user_wants_mmk:
-        # If user types "100000" (Kyat), usually implies Buying Baht
         if not is_thb_input: user_wants_thb = True 
-        # If user types "500 B" (Baht), usually implies Selling Baht (Buying Kyat)
         else: user_wants_mmk = True
 
     result_text = ""
 
     # --- CALCULATION LOGIC ---
 
-    # SCENARIO A: INPUT IS BAHT (Example: "500 B", "ဘတ်ပေး 500", "500 b ယူမယ်")
+    # SCENARIO A: INPUT IS BAHT
     if is_thb_input:
         thb_amount = amount
         
-        # User WANTS Baht (Buying THB with THB Input - Rare: "I need 500 Baht")
+        # User WANTS Baht
         if user_wants_thb and not user_wants_mmk:
             calc_rate = mm_rate / 100000
             if thb_amount >= mm_rate:
@@ -215,9 +232,8 @@ def analyze_message(message):
                            f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ကျသင့်ပါမယ်။\n"
                            f"(Rate: {mm_rate}{fee_msg})")
 
-        # User GIVES Baht (Selling THB / Buying Kyat) - Default for Baht input
+        # User GIVES Baht (Selling THB / Buying Kyat)
         else:
-            # Phone Bill Range Check
             if thb_amount <= 260:
                  if items:
                      closest_item = min(items, key=lambda x: abs(float(x['thbBill']) - thb_amount))
@@ -229,18 +245,17 @@ def analyze_message(message):
                  result_text = (f"🇹🇭 <b>{thb_amount:,.0f} B</b> ရောင်းရင်\n"
                                 f"🇲🇲 <b>{mmk_clean:,.0f} Ks</b> ဝန်းကျင် ရပါမယ်ခင်ဗျာ။")
 
-    # SCENARIO B: INPUT IS KYAT (Example: "100000", "ကျပ်ပေး 100000")
+    # SCENARIO B: INPUT IS KYAT
     else:
         mmk_amount = amount
         
-        # User WANTS Baht (Buying THB / Giving Kyat) - Default for Kyat input
+        # User WANTS Baht
         if user_wants_thb or (not user_wants_mmk):
-            # Check 10 Lakhs Logic
             rate = mm_rate
             if mmk_amount >= 10000000: rate += 5
             elif mmk_amount >= 5000000: rate += 4
             elif mmk_amount >= 3000000: rate += 3
-            elif mmk_amount >= 1000000: rate += 2 # 10 Lakhs+ gets +2
+            elif mmk_amount >= 1000000: rate += 2 
 
             if mmk_amount < 100000:
                 thb_get = ((mmk_amount / 100000) * mm_rate) - 10
@@ -249,8 +264,7 @@ def analyze_message(message):
                 thb_get = (mmk_amount / 100000) * rate
                 result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> (🇹🇭ဘတ်ယူ) ဆိုရင်\n🇹🇭 <b>{thb_get:,.2f} B</b> ရပါမယ်။\n(Rate: {rate})"
         
-        # User WANTS Kyat (Selling THB / Giving Kyat Input?? - Rare: "How much is 100k Kyat worth if I sell Baht?")
-        # Usually implies "ကျပ်ယူ" (Take Kyat) -> selling Baht to get this amount of Kyat
+        # User WANTS Kyat
         else:
             if mmk_amount < 30000:
                 found = False
@@ -267,7 +281,6 @@ def analyze_message(message):
 
             else:
                 rate = th_rate
-                # Wave Pass / Special Rate check inside calculation if keywords exist
                 if 'password' in msg_lower or 'pw' in msg_lower: rate += 15
                 else:
                     if mmk_amount >= 30000000: rate -= 5
