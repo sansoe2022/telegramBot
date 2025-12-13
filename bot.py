@@ -71,6 +71,8 @@ def send_fallback(message):
         "ဥပမာ - \n• ဘတ်ပေး 1000 \n• ကျပ်ယူ 1သိန်း\n\n"
         "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက \nကျပ်ပေး (ပမာဏ) သို့မဟုတ် ဘတ်ယူ (ပမာဏ) ရေးပါ</b>\n"
         "ဥပမာ - \n• ကျပ်ပေး 1သိန်း \n• ဘတ်ယူ 1000\n\n"
+        "Wave password(ဆိုင်ထုတ်)စျေး တွက်ချင်ပါက\nWave pw ကျပ်ယူ (ပမာဏ) သို့မဟုတ် Wave pw ဘတ်ပေး (ပမာဏ) ရေးပါ\n"
+        "ဥပမာ - \n• Wave pw ကျပ်ယူ 1သိန်း \n• Wave pw ဘတ်ပေး 1000\n\n"
         "လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
     )
     markup = InlineKeyboardMarkup()
@@ -146,6 +148,8 @@ def menu_help(message):
         "ဥပမာ - \n• ဘတ်ပေး 1000 \n• ကျပ်ယူ 1သိန်း\n\n"
         "🇹🇭 <b>ဘတ်ငွေလိုချင်ပါက \nကျပ်ပေး (ပမာဏ) သို့မဟုတ် ဘတ်ယူ (ပမာဏ) ရေးပါ</b>\n"
         "ဥပမာ - \n• ကျပ်ပေး 1သိန်း \n• ဘတ်ယူ 1000\n\n"
+        "Wave password(ဆိုင်ထုတ်)စျေး တွက်ချင်ပါက\nWave pw ကျပ်ယူ (ပမာဏ) သို့မဟုတ် Wave pw ဘတ်ပေး (ပမာဏ) ရေးပါ\n"
+        "ဥပမာ - \n• Wave pw ကျပ်ယူ 1သိန်း \n• Wave pw ဘတ်ပေး 1000\n\n"
         "လိုချင်သော ပမာဏကို ပြင်ပြီး တွက်ချက်နိုင်ပါသည်။"
     )
     bot.reply_to(message, text, parse_mode='HTML')
@@ -302,10 +306,10 @@ def analyze_message(message):
                  
                  calc_rate = th_rate
                  # Apply Tiered Logic (Same tiers as Buying, but Reducing rate to benefit user)
-                 if approx_kyat >= 10000000: calc_rate -= 5
-                 elif approx_kyat >= 5000000: calc_rate -= 4
-                 elif approx_kyat >= 3000000: calc_rate -= 3
-                 elif approx_kyat >= 1000000: calc_rate -= 2
+                 if approx_kyat >= 10000000: calc_rate -= 4
+                 elif approx_kyat >= 5000000: calc_rate -= 3
+                 elif approx_kyat >= 3000000: calc_rate -= 2
+                 elif approx_kyat >= 1000000: calc_rate -= 1
                  
                  if approx_kyat >= 100000:
                     # > 1 Lakh: No Fee, Tiered Rate
@@ -357,10 +361,10 @@ def analyze_message(message):
             else:
                 # 🔥 SYMMETRICAL LOGIC FOR LARGE AMOUNTS 🔥
                 rate = th_rate
-                if mmk_amount >= 10000000: rate -= 5
-                elif mmk_amount >= 5000000: rate -= 4
-                elif mmk_amount >= 3000000: rate -= 3
-                elif mmk_amount >= 1000000: rate -= 2
+                if mmk_amount >= 10000000: rate -= 4
+                elif mmk_amount >= 5000000: rate -= 3
+                elif mmk_amount >= 3000000: rate -= 2
+                elif mmk_amount >= 1000000: rate -= 1
                 
                 thb_cost = (mmk_amount / 100000) * rate
                 result_text = f"🇲🇲 <b>{mmk_amount:,.0f} Ks</b> ယူလျှင်\n🇹🇭 <b>{thb_cost:,.2f} B</b> ကျသင့်ပါမည်။\n(Rate: {rate})"
