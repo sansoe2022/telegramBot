@@ -238,7 +238,7 @@ def analyze_message(message):
         else:
              mmk_get = amount
              thb_val = (mmk_get / 100000) * wave_rate
-             input_show = f"Wave password(ဆိုင်ထုတ်)🇹🇭 <b>{thb_val:,.2f} B</b>"
+             input_show = f"Wave password(ဆိုင်ထုတ်)\n🇹🇭 <b>{thb_val:,.2f} B</b>"
 
         mmk_clean = round(mmk_get / 100) * 100
         result_text = (f"{input_show} ရောင်းရင်\n"
